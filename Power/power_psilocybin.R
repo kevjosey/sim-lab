@@ -79,14 +79,15 @@ alpha <- 0.05
 n_seq <- seq(10, 100, by = 10)
 days_seq <- c(0,1,7,28,56,84)
 trt_seq <- c("Low + Ctrl", "High + Ctrl", "Low + Trt", "High + Trt")
-rho <- 0.7
-n.iter <- 100
+rho <- 0.7 # correlation coefficient between responses
+n.iter <- 1000
 result <- data.frame()
 
 # start simulation
 
 for (i in 1:length(n_seq)) {
   
+  print(i)
   n <- n_seq[i]
   
   trt <- rep(trt_seq, each = n)
@@ -133,12 +134,14 @@ for (i in 1:length(n_seq)) {
     contrast_est = coef(model) %*% t(contr)
     contrast_se = sqrt(contr %*% vcov_gee %*% t(contr))
     
-    output = data.frame(Estimate = contrast_est[1,1],
-                        SE = diag(contrast_se)[1]) %>% 
-      mutate(LCI = Estimate - qnorm(1 - alpha/(2))*SE,
-             UCI = Estimate + qnorm(1 - alpha/(2))*SE) # Bonferroni baked in
+    output = data.frame(Estimate_therapy = c(contrast_est)[1],
+                        SE_therapy = diag(contrast_se)[1],
+                        Estimate_trt = c(contrast_est)[2],
+                        SE_trt = diag(contrast_se)[2]) %>% 
+      mutate(LCI = Estimate_therapy - qnorm(1 - alpha/(2))*SE_therapy,
+             UCI = Estimate_therapy + qnorm(1 - alpha/(2))*SE_therapy) # Bonferroni baked in
              
-    test.stat[j] <- as.numeric(all(output$UCI < 0))
+    test.stat[j] <- as.numeric(output$UCI < 0 | output$LCI > 0)
     
   }
   
